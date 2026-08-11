@@ -52,19 +52,44 @@ export default function Feedback() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Load reviews from localStorage on client side
+  // Load live reviews from API & LocalStorage
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("swachhath_custom_reviews");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setReviews([...parsed, ...initialDefaultReviews]);
+    async function fetchLiveReviews() {
+      try {
+        const res = await fetch("/api/feedback");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reviews && Array.isArray(data.reviews) && data.reviews.length > 0) {
+            const formattedApiReviews: Review[] = data.reviews.map((r: any) => ({
+              name: r.name,
+              location: r.location || "Karnataka",
+              rating: Number(r.rating) || 5,
+              comment: r.comment,
+              date: r.timestamp ? new Date(r.timestamp).toLocaleDateString("en-IN", { month: "short", day: "numeric" }) : "Recent",
+            }));
+            setReviews([...formattedApiReviews, ...initialDefaultReviews]);
+            return;
+          }
         }
+      } catch (err) {
+        console.error("Live reviews fetch error:", err);
       }
-    } catch (e) {
-      console.error("LocalStorage review load error:", e);
+
+      // Fallback to localStorage
+      try {
+        const saved = localStorage.getItem("swachhath_custom_reviews");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setReviews([...parsed, ...initialDefaultReviews]);
+          }
+        }
+      } catch (e) {
+        console.error("LocalStorage review load error:", e);
+      }
     }
+
+    fetchLiveReviews();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

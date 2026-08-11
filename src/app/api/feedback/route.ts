@@ -59,3 +59,16 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function GET() {
+  let reviews = [];
+  if (fs.existsSync(FILE_PATH)) {
+    try {
+      const fileContent = fs.readFileSync(FILE_PATH, "utf-8");
+      reviews = JSON.parse(fileContent);
+    } catch (err) {
+      console.error("Error reading feedback.json:", err);
+    }
+  }
+  return NextResponse.json({ success: true, reviews });
+}
