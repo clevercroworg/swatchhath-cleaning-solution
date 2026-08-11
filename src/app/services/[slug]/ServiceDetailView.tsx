@@ -58,7 +58,7 @@ export default function ServiceDetailView({ slug }: { slug: string }) {
         {/* Hero Banner with Service Image (Compact Height) */}
         <div className="relative h-56 sm:h-64 md:h-80 overflow-hidden">
           <Image
-            src={service.image}
+            src={service.detailImage || service.image}
             alt={service.name}
             fill
             priority
@@ -190,6 +190,31 @@ export default function ServiceDetailView({ slug }: { slug: string }) {
                   ))}
                 </div>
               </div>
+
+              {/* Real Work Gallery Showcase (If Available) */}
+              {service.galleryImages && service.galleryImages.length > 0 && (
+                <div className="bg-white border border-slate-150 p-5 rounded-2xl shadow-3xs space-y-4">
+                  <h2 className="font-heading text-base sm:text-lg font-extrabold text-slate-900 flex items-center justify-between">
+                    <span>Real Work Photos</span>
+                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                      Verified Swachhath Team
+                    </span>
+                  </h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    {service.galleryImages.map((gImg, gIdx) => (
+                      <div key={gIdx} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 shadow-xs">
+                        <Image
+                          src={gImg}
+                          alt={`${service.name} work ${gIdx + 1}`}
+                          fill
+                          sizes="(max-width: 640px) 50vw, 33vw"
+                          className="object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right Column — Sidebar */}

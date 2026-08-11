@@ -21,6 +21,8 @@ export type ServiceDetail = {
   tag: string;
   iconName: string;
   image: string;
+  detailImage?: string;
+  galleryImages?: string[];
   desc: string;
   longDesc: string;
   whyItMatters: string;
@@ -242,7 +244,14 @@ export const servicesList: ServiceDetail[] = [
     category: "Residential",
     tag: "Grease & Stain Extraction",
     iconName: "Utensils",
-    image: "/images/services/kitchen-deck-cleaning.png",
+    image: "/images/services/kitchen-deck-cleaning.jpg",
+    detailImage: "/images/services/kitchen-deck-cleaning-detail.jpg",
+    galleryImages: [
+      "/images/services/kitchen-deck-cleaning.jpg",
+      "/images/services/kitchen-deck-cleaning-detail.jpg",
+      "/images/services/kitchen-deck-cleaning-work1.jpg",
+      "/images/services/kitchen-deck-cleaning-work2.jpg"
+    ],
     desc: "Deep scrubbing, grease degreasing, backsplash tile cleaning, and sanitization of kitchen decks.",
     longDesc: "Kitchen decks accumulate tough oil residue, soot, and food stains over time. Our specialized Kitchen Deck Cleaning service deep cleans countertops, tile backsplashes, gas stove areas, and under-sink zones using non-toxic degreasers for a pristine, hygienic food prep space.",
     whyItMatters: "A grease-free kitchen deck prevents bacterial growth, pest infestations, and stubborn oil odors, keeping food prep areas safe and fresh.",
