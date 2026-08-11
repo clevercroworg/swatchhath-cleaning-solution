@@ -19,23 +19,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Ensure data directory exists
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-
-    // Read existing reviews
-    let reviews = [];
-    if (fs.existsSync(FILE_PATH)) {
-      try {
-        const fileContent = fs.readFileSync(FILE_PATH, "utf-8");
-        reviews = JSON.parse(fileContent);
-      } catch (err) {
-        console.error("Error parsing feedback.json, resetting...", err);
-      }
-    }
-
-    // Add new review submission
     const newReview = {
       id: Date.now().toString(),
       name,
@@ -45,13 +28,29 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     };
 
-    reviews.push(newReview);
+    // Save to file safely (handling read-only filesystems on Vercel/Netlify)
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
 
-    // Save to file
-    fs.writeFileSync(FILE_PATH, JSON.stringify(reviews, null, 2), "utf-8");
+      let reviews = [];
+      if (fs.existsSync(FILE_PATH)) {
+        try {
+          const fileContent = fs.readFileSync(FILE_PATH, "utf-8");
+          reviews = JSON.parse(fileContent);
+        } catch (err) {
+          console.error("Error parsing feedback.json:", err);
+        }
+      }
+      reviews.push(newReview);
+      fs.writeFileSync(FILE_PATH, JSON.stringify(reviews, null, 2), "utf-8");
+    } catch (fsErr) {
+      console.warn("Read-only filesystem detected, review returned in HTTP 200 payload:", fsErr);
+    }
 
-    console.log("New review feedback saved:", newReview);
-    return NextResponse.json({ success: true, reviewId: newReview.id });
+    console.log("New review feedback processed:", newReview);
+    return NextResponse.json({ success: true, reviewId: newReview.id, review: newReview });
   } catch (error: any) {
     console.error("API feedback error:", error);
     return NextResponse.json(

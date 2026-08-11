@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Star, MessageSquarePlus, CheckCircle, ShieldCheck } from "lucide-react";
 
 type Review = {
@@ -12,13 +12,20 @@ type Review = {
 };
 
 export default function Feedback() {
-  const [reviews, setReviews] = useState<Review[]>([
+  const initialDefaultReviews: Review[] = [
+    {
+      name: "Verified Client",
+      location: "Udupi",
+      rating: 5,
+      comment: "Overhead tank solar and full house deep cleaning and i have not expected the result like this. I ll highly recommend customers to choose Swachhath. Thankyou rakesh for you and your team work. 🥰🙏",
+      date: "2 weeks ago",
+    },
     {
       name: "Ramesh Hegde",
       location: "Udupi",
       rating: 5,
       comment: "Outstanding solar panel and sump cleaning service! They arrived on time and cleaned everything using pressure jets. Highly recommend Swachhath.",
-      date: "2 weeks ago",
+      date: "3 weeks ago",
     },
     {
       name: "Priya Kamath",
@@ -32,10 +39,11 @@ export default function Feedback() {
       location: "Manipal",
       rating: 5,
       comment: "Very transparent with their prices. They explicitly told us the transport costs upfront. Sump cleaning was highly professional.",
-      date: "3 weeks ago",
+      date: "1 month ago",
     },
-  ]);
+  ];
 
+  const [reviews, setReviews] = useState<Review[]>(initialDefaultReviews);
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
@@ -44,43 +52,80 @@ export default function Feedback() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Load reviews from localStorage on client side
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("swachhath_custom_reviews");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setReviews([...parsed, ...initialDefaultReviews]);
+        }
+      }
+    } catch (e) {
+      console.error("LocalStorage review load error:", e);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !comment) return;
 
     setLoading(true);
+
+    const newRevItem: Review = {
+      name: name.trim(),
+      location: location.trim() || "Karnataka",
+      rating,
+      comment: comment.trim(),
+      date: "Just now",
+    };
+
+    // 1. Immediately update UI state & LocalStorage
+    const updated = [newRevItem, ...reviews];
+    setReviews(updated);
     try {
-      const res = await fetch("/api/feedback", {
+      const customOnly = updated.filter((r) => r.date === "Just now");
+      localStorage.setItem("swachhath_custom_reviews", JSON.stringify(customOnly));
+    } catch (e) {
+      console.error("LocalStorage save error:", e);
+    }
+
+    // 2. Format WhatsApp link
+    const waText = encodeURIComponent(
+      `*Swachhath Cleaning Solution - New Review Submission*\n\n` +
+      `⭐ *Rating:* ${rating}/5 Stars\n` +
+      `👤 *Name:* ${name.trim()}\n` +
+      `📍 *Location:* ${location.trim() || "Karnataka"}\n` +
+      `💬 *Review:* ${comment.trim()}\n\n` +
+      `_Submitted via Swachhath Website_`
+    );
+    const waUrl = `https://wa.me/917760771351?text=${waText}`;
+
+    // 3. API Sync
+    try {
+      await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, location, rating, comment }),
       });
-
-      if (res.ok) {
-        setReviews([
-          {
-            name,
-            location: location || "Karnataka",
-            rating,
-            comment,
-            date: "Just now",
-          },
-          ...reviews,
-        ]);
-        setSuccess(true);
-        setName("");
-        setLocation("");
-        setRating(5);
-        setComment("");
-        setTimeout(() => {
-          setSuccess(false);
-          setFormOpen(false);
-        }, 3000);
-      }
     } catch (error) {
-      console.error("Error submitting feedback:", error);
+      console.error("API feedback error:", error);
     } finally {
       setLoading(false);
+      setSuccess(true);
+      setName("");
+      setLocation("");
+      setRating(5);
+      setComment("");
+      
+      // Open WhatsApp automatically
+      window.open(waUrl, "_blank", "noopener,noreferrer");
+
+      setTimeout(() => {
+        setSuccess(false);
+        setFormOpen(false);
+      }, 4000);
     }
   };
 
