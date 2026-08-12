@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Star, MessageSquarePlus, CheckCircle, ShieldCheck } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Star, MessageSquarePlus, CheckCircle, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react";
 
 type Review = {
   name: string;
@@ -52,6 +52,10 @@ export default function Feedback() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+
   // Load live reviews from API & LocalStorage
   useEffect(() => {
     async function fetchLiveReviews() {
@@ -91,6 +95,53 @@ export default function Feedback() {
 
     fetchLiveReviews();
   }, []);
+
+  // Auto carousel scroll
+  useEffect(() => {
+    if (isPaused || reviews.length === 0) return;
+
+    const interval = setInterval(() => {
+      if (scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        const cardWidth = container.firstElementChild
+          ? (container.firstElementChild as HTMLElement).offsetWidth + 20
+          : 340;
+        const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
+        if (container.scrollLeft >= maxScrollLeft - 15) {
+          container.scrollTo({ left: 0, behavior: "smooth" });
+          setActiveIndex(0);
+        } else {
+          container.scrollBy({ left: cardWidth, behavior: "smooth" });
+          setActiveIndex((prev) => (prev + 1) % reviews.length);
+        }
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isPaused, reviews.length]);
+
+  const handleScrollPrev = () => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const cardWidth = container.firstElementChild
+        ? (container.firstElementChild as HTMLElement).offsetWidth + 20
+        : 340;
+      container.scrollBy({ left: -cardWidth, behavior: "smooth" });
+      setActiveIndex((prev) => Math.max(0, prev - 1));
+    }
+  };
+
+  const handleScrollNext = () => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const cardWidth = container.firstElementChild
+        ? (container.firstElementChild as HTMLElement).offsetWidth + 20
+        : 340;
+      container.scrollBy({ left: cardWidth, behavior: "smooth" });
+      setActiveIndex((prev) => Math.min(reviews.length - 1, prev + 1));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,11 +206,11 @@ export default function Feedback() {
   };
 
   return (
-    <section id="reviews" className="section-compact bg-slate-50/50 border-b border-slate-100">
+    <section id="reviews" className="section-compact bg-slate-50/50 border-b border-slate-100 overflow-hidden">
       <div className="max-w-6xl mx-auto px-6 sm:px-8">
         
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
+        {/* Header with Navigation Controls */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
           <div>
             <span className="text-xs font-extrabold text-secondary tracking-[0.2em] uppercase block mb-2">
               Testimonials
@@ -172,13 +223,34 @@ export default function Feedback() {
             </p>
           </div>
           
-          <button
-            onClick={() => setFormOpen(!formOpen)}
-            className="inline-flex items-center justify-center text-sm font-extrabold bg-white text-primary border border-primary/20 hover:border-primary px-4.5 py-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-all shadow-3xs hover:shadow-2xs shrink-0 w-fit"
-          >
-            <MessageSquarePlus className="h-4.5 w-4.5 mr-2" />
-            Write a Review
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Carousel Navigation Arrows */}
+            <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-3xs">
+              <button
+                onClick={handleScrollPrev}
+                className="p-2 rounded-lg text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors"
+                aria-label="Previous Review"
+              >
+                <ChevronLeft className="h-4.5 w-4.5" />
+              </button>
+              <span className="h-4 w-px bg-slate-200" />
+              <button
+                onClick={handleScrollNext}
+                className="p-2 rounded-lg text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors"
+                aria-label="Next Review"
+              >
+                <ChevronRight className="h-4.5 w-4.5" />
+              </button>
+            </div>
+
+            <button
+              onClick={() => setFormOpen(!formOpen)}
+              className="inline-flex items-center justify-center text-xs sm:text-sm font-extrabold bg-white text-primary border border-primary/20 hover:border-primary px-4 py-2.5 rounded-xl hover:bg-slate-50 cursor-pointer transition-all shadow-3xs hover:shadow-2xs shrink-0"
+            >
+              <MessageSquarePlus className="h-4 w-4 mr-2" />
+              Write a Review
+            </button>
+          </div>
         </div>
 
         {/* Feedback Expandable Form */}
@@ -270,44 +342,79 @@ export default function Feedback() {
           </div>
         )}
 
-        {/* Reviews Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {reviews.map((rev, idx) => (
-            <div
-              key={idx}
-              className="bg-white border border-slate-150 p-6 rounded-2xl shadow-3xs card-hover flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 ${
-                          i < rev.rating ? "text-amber-400 fill-amber-400" : "text-slate-200"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs text-slate-400 font-medium">{rev.date}</span>
-                </div>
-                <p className="text-sm text-slate-655 italic leading-relaxed">
-                  "{rev.comment}"
-                </p>
-              </div>
-
-              <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+        {/* Reviews Horizontal Auto-Carousel */}
+        <div
+          className="relative"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={() => setIsPaused(true)}
+          onTouchEnd={() => setIsPaused(false)}
+        >
+          <div
+            ref={scrollContainerRef}
+            className="flex overflow-x-auto snap-x snap-mandatory gap-5 md:gap-6 pb-4 scroll-smooth no-scrollbar"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {reviews.map((rev, idx) => (
+              <div
+                key={idx}
+                className="snap-start shrink-0 w-[86vw] sm:w-[350px] md:w-[370px] bg-white border border-slate-150 p-6 rounded-2xl shadow-3xs hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+              >
                 <div>
-                  <h4 className="text-sm font-extrabold text-slate-800">{rev.name}</h4>
-                  <p className="text-xs text-slate-400">{rev.location}</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < rev.rating ? "text-amber-400 fill-amber-400" : "text-slate-200"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium">{rev.date}</span>
+                  </div>
+                  <p className="text-sm text-slate-655 italic leading-relaxed line-clamp-4">
+                    "{rev.comment}"
+                  </p>
                 </div>
-                <div className="flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
-                  <ShieldCheck className="h-4 w-4 mr-1 text-emerald-600" />
-                  <span>Verified Clean</span>
+
+                <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-800">{rev.name}</h4>
+                    <p className="text-xs text-slate-400">{rev.location}</p>
+                  </div>
+                  <div className="flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full shrink-0">
+                    <ShieldCheck className="h-4 w-4 mr-1 text-emerald-600" />
+                    <span>Verified Clean</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Dots Navigation */}
+          <div className="flex items-center justify-center gap-2 mt-4">
+            {reviews.map((_, dotIdx) => (
+              <button
+                key={dotIdx}
+                onClick={() => {
+                  if (scrollContainerRef.current) {
+                    const container = scrollContainerRef.current;
+                    const cardWidth = container.firstElementChild
+                      ? (container.firstElementChild as HTMLElement).offsetWidth + 20
+                      : 340;
+                    container.scrollTo({ left: cardWidth * dotIdx, behavior: "smooth" });
+                    setActiveIndex(dotIdx);
+                  }
+                }}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  dotIdx === activeIndex ? "w-7 bg-primary" : "w-2 bg-slate-300 hover:bg-slate-400"
+                }`}
+                aria-label={`Go to review ${dotIdx + 1}`}
+              />
+            ))}
+          </div>
         </div>
 
       </div>
