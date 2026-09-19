@@ -38,6 +38,11 @@ export const servicesList: ServiceDetail[] = [
     tag: "Authorized Sales & Setup",
     iconName: "Sun",
     image: "/images/services/solar-sales-services.png",
+    detailImage: "/images/services/solar-sales-services.png",
+    galleryImages: [
+      "/images/services/solar-sales-services.png",
+      "/images/services/solar-sales-services.jpg"
+    ],
     desc: "Supply, sales, installation assistance, and end-to-end maintenance of residential & commercial solar systems.",
     longDesc: "We provide complete solar energy system sales, consultation, new unit installations, and routine maintenance packages. Whether upgrading your home water heating setup or configuring rooftop solar PV panels, our expert team delivers genuine parts and reliable regional service.",
     whyItMatters: "Transitioning to solar energy dramatically lowers utility costs. Expert sales advice combined with local service guarantees optimal system capacity, long life, and quick maintenance support.",
@@ -222,6 +227,11 @@ export const servicesList: ServiceDetail[] = [
     tag: "High-Reach Store Fronts",
     iconName: "Layers",
     image: "/images/services/signboard-facade-cleaning.png",
+    detailImage: "/images/services/signboard-facade-cleaning.png",
+    galleryImages: [
+      "/images/services/signboard-facade-cleaning.png",
+      "/images/services/signboard-facade-cleaning-full.jpg"
+    ],
     desc: "High-reach washing and detailing for shops, hotels, and office exterior hoardings.",
     longDesc: "First impressions matter. Your storefront facade and signboards collect heavy traffic soot and rain stains. Swachhath uses high-reach telescopic water poles and glass squeegees to clean exterior hoardings safely from the ground.",
     whyItMatters: "A clean storefront directly attracts more foot traffic. Regular facade maintenance signals business quality and keeps shop signboards shining brightly.",
